@@ -35,14 +35,15 @@
     <section class="w-100 d-flex align-items-center justify-content-between">
       <div class="d-flex gap-3 align-items-center">
         <div class="position-relative point" title="check notifications">    
-          <img :src="pic" data-bs-toggle="modal" data-bs-target="#notifications" alt="logo" class="img-fluid rounded-circle" width="35" height="35">
-          <span v-show="notifyBadge" class="position-absolute top-0 start-100 translate-middle badge border border-light rounded-circle bg-danger p-1"><span class="visually-hidden">unread messages</span></span>
+          <img :src="pic" data-bs-toggle="modal" data-bs-target="#notifications" alt="logo" class="img-fluid rounded-circle" width="40" height="40">
+          <span v-show="notifyBadge" class="position-absolute top-0 start-100 translate-middle badge border border-light rounded-pill bg-danger font-monospace fs-xsmall m-0">{{notifications.length}}</span>
         </div>
         <h5 class="text-secondary fs-4 m-0">Mashoun CMS</h5>
       </div>
       <i class="fs-4 bi bi-three-dots-vertical d-block d-lg-none" type="button" data-bs-toggle="dropdown"></i>
       <ul class="dropdown-menu">
         <li><router-link class="dropdown-item link-underline-opacity-100-hover link-primary link-offset-3 link-underline-opacity-0" to="/">Profile</router-link></li>
+        <li><router-link class="dropdown-item link-underline-opacity-100-hover link-primary link-offset-3 link-underline-opacity-0" to="/comments">Comments</router-link></li>
         <li><router-link class="dropdown-item link-underline-opacity-100-hover link-primary link-offset-3 link-underline-opacity-0"  to="/blogs">Blogs</router-link></li>
         <li><router-link class="dropdown-item link-underline-opacity-100-hover link-primary link-offset-3 link-underline-opacity-0"  to="/experience">Experience</router-link></li>
         <li><router-link class="dropdown-item link-underline-opacity-100-hover link-primary link-offset-3 link-underline-opacity-0"  to="/analytics">Analytics</router-link></li>
@@ -50,6 +51,7 @@
     </section>
     <nav class="d-none d-lg-flex gap-3 align-items-center">
       <router-link class="link-underline-opacity-100-hover link-primary link-offset-3 link-underline-opacity-0" to="/">Profile</router-link>
+      <router-link class="link-underline-opacity-100-hover link-primary link-offset-3 link-underline-opacity-0" to="/comments">Comments</router-link>
       <router-link class="link-underline-opacity-100-hover link-primary link-offset-3 link-underline-opacity-0"  to="/blogs">Blogs</router-link>
       <router-link class="link-underline-opacity-100-hover link-primary link-offset-3 link-underline-opacity-0"  to="/experience">Experience</router-link>
       <router-link class="link-underline-opacity-100-hover link-primary link-offset-3 link-underline-opacity-0"  to="/analytics">Analytics</router-link>
@@ -64,17 +66,18 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h1 class="modal-title fs-6" id="exampleModalLabel">You have {{notifications.length}} notifications</h1>
+          <h1 class="modal-title fs-6 text-primary pop" id="exampleModalLabel">You have {{notifications.length}} notifications</h1>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body d-flex flex-column gap-3">
+          <span v-show="!notifyBadge" class="text-center material-symbols-outlined text-secondary display-1">notification_important</span>
+          <span></span>
           <div v-for="n in notifications" :key="n" class="p-2">
             <span class="fs-xsmall pop">{{timo(n.date)}}</span>
             <div class="d-flex align-items-center gap-2">
               <i :class="iconClass(n)"></i>
-              <small class="pop text-secondary">{{n.title}}</small>
+              <small class="pop text-dark">{{n.title}}</small>
             </div>
-            <hr>
           </div>
 
 
@@ -154,8 +157,12 @@ export default {
       var res = await fetch(api)
       res = await res.json()
       if(res != '500') {
+
+        const music = new Audio('./src/assets/tone.wav')
         this.notifications = res
         this.notifyBadge = true
+        music.play()
+
       }
 
       console.log(res)
@@ -174,6 +181,7 @@ export default {
     }
   },
   mounted(){
+
   }
 }
 </script>
