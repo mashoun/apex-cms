@@ -1,10 +1,42 @@
 <template>
-  <header class="w-100 position-fixed bg-light top-0 start-0 z-3 p-3 d-flex justify-content-between align-items-center shadow-sm pop">
+
+  <!-- Login section -->
+  <section v-if="!isLogedIn" class="w-100 h-100 bg-light position-fixed top-0 start-0 z-3">
+
+    <div class="container my-5">
+      <div class="row justify-content-center p-3">
+        <section class="col-12 col-md-8 col-lg-5 shadow-sm px-3 py-4 bg-light rounded d-flex flex-column gap-2 align-items-center">
+          
+          <img :src="pic" alt="logo" width="70" height="70" class="img-fluid rounded-pill skeleton">
+          <h6 class="pop fs-4 text-secondary text-center"><strong>Mahmoud Mashoun</strong></h6>
+          <div class="w-100 d-flex flex-column gap-2 pop mt-3">
+            <div class="form-floating">
+              <input v-model="username" type="email" class="form-control" id="username" @keyup.enter="focus('password')"
+                placeholder="name@example.com">
+              <label for="username">Username</label>
+            </div>
+            <div class="form-floating">
+              <input v-model="password" @keyup.enter="login" type="password" class="form-control" id="password"
+                placeholder="Password">
+              <label for="password">Password</label>
+            </div>
+            <button class="btn btn-primary ls-1 w-100" @click="login">
+              <span v-if="loginSpinner" class="spinner-grow text-light spinner-grow-sm"></span>
+              <span v-else>Login</span>
+            </button>
+            <small class="fs-xsmall text-secondary pop text-center mt-2">Access your account and start
+              exploring !</small>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+  <header v-if="isLogedIn" class="w-100 position-fixed bg-light top-0 start-0 z-3 p-3 d-flex justify-content-between align-items-center shadow-sm pop">
     <section class="w-100 d-flex align-items-center justify-content-between">
       <div class="d-flex gap-3 align-items-center">
         <div class="position-relative point" title="check notifications">    
           <img :src="pic" data-bs-toggle="modal" data-bs-target="#notifications" alt="logo" class="img-fluid rounded-circle" width="35" height="35">
-          <span class="position-absolute top-0 start-100 translate-middle badge border border-light rounded-circle bg-danger p-1"><span class="visually-hidden">unread messages</span></span>
+          <span v-show="notifyBadge" class="position-absolute top-0 start-100 translate-middle badge border border-light rounded-circle bg-danger p-1"><span class="visually-hidden">unread messages</span></span>
         </div>
         <h5 class="text-secondary fs-4 m-0">Mashoun CMS</h5>
       </div>
@@ -23,8 +55,8 @@
       <router-link class="link-underline-opacity-100-hover link-primary link-offset-3 link-underline-opacity-0"  to="/analytics">Analytics</router-link>
     </nav>
   </header>
-  <main class="py-5 my-5">
-    <router-view></router-view>
+  <main v-if="isLogedIn" class="py-5 my-5">
+    <router-view :username="username" :password="password" :github="github" :api="api"></router-view>
   </main>
   
   <!-- Modals -->
@@ -32,49 +64,116 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h1 class="modal-title fs-6" id="exampleModalLabel">You have 4 notifications</h1>
+          <h1 class="modal-title fs-6" id="exampleModalLabel">You have {{notifications.length}} notifications</h1>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div class="p-2">
-            <span class="fs-xsmall pop">22 hrs ago</span>
+          <div v-for="n in notifications" :key="n" class="p-2">
+            <span class="fs-xsmall pop">{{timo(n.date)}}</span>
             <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-camera-reels text-info"></i>
-              <small class="pop text-secondary">mokhtar.ayoubi@live.com want to meet !</small>
+              <i :class="iconClass(n)"></i>
+              <small class="pop text-secondary">{{n.title}}</small>
             </div>
-          </div>
-          <hr>
-          <div class="p-2">
-            <span class="fs-xsmall pop">22 hrs ago</span>
-            <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-star text-danger"></i>
-              <small class="pop text-secondary">mohamad.ayoubi@gmail.com have subscribed to your newsLetter !</small>
-            </div>
-          </div>
-          <hr>
-          <div class="p-2">
-            <span class="fs-xsmall pop">22 hrs ago</span>
-            <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-chat-square-dots text-warning"></i>
-              <small class="pop text-secondary">yarahoro7@gmail.com commented on a blog !</small>
-            </div>
+            <hr>
           </div>
 
 
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Clear</button>
+          <button type="button" @click="clearNotifications" :disabled="!notifyBadge" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Clear</button>
         </div>
       </div>
     </div>
   </div>
 </template>
+
 <script>
 export default {
   data(){
     return{
-      pic : "https://drive.google.com/uc?export=view&id=1carhdDO1t8HQlqGYBC9ad57n2WQamfaa"
+
+      api:'https://script.google.com/macros/s/AKfycbybsItStta2Gm5wYVqPBX4lPRjPO3Da3Z6DLCHKBWB52DFhiFf08NT9virUyMPxC7zWlQ/exec',
+      pic : "https://drive.google.com/uc?export=view&id=1carhdDO1t8HQlqGYBC9ad57n2WQamfaa",
+      username: '',
+      password: '',
+      isLogedIn: false,
+      loginSpinner: false,
+      github: '',
+      notifications:'',
+      notifyBadge:false
     }
+  },
+  
+  methods: {
+    iconClass(notif){
+      if(notif.icon == 'star') return 'text-danger bi bi-star'
+      if(notif.icon == 'camera-reels') return 'text-info bi bi-camera-reels'
+      return 'text-warning bi bi-chat-square'
+    },
+    focus(id) {
+      document.getElementById(id).focus()
+    },
+
+    timo(date) {
+      dayjs.extend(window.dayjs_plugin_relativeTime);
+      dayjs();
+      const futureDate = dayjs(date);
+      console.log(futureDate.fromNow());
+      return futureDate.fromNow()
+    },
+    login() {
+      this.loginSpinner = true;
+      var api = this.api
+      api += `?username=${this.username}&password=${this.password}`
+
+      fetch(api).then(res => res.json()).then(res => {
+        console.log(res)
+        if (res != '500') {
+          this.isLogedIn = true;
+          this.loginSpinner = false;
+          this.github = res
+          this.getNotifications()
+        } else {
+
+          document.getElementById('username').classList.add('is-invalid')
+          document.getElementById('password').classList.add('is-invalid')
+          this.username = ''
+          this.password = ''
+          this.loginSpinner = false;
+        }
+      }).catch(e => {
+        console.log(e)
+        alert('Weak Network Login again please')
+        this.loginSpinner = false;
+
+      })
+    },
+    async getNotifications(){
+      var api = this.api
+      api += `?username=${this.username}&password=${this.password}&getNotifications=1`
+      var res = await fetch(api)
+      res = await res.json()
+      if(res != '500') {
+        this.notifications = res
+        this.notifyBadge = true
+      }
+
+      console.log(res)
+    },
+    async clearNotifications(){
+      this.notifications = []
+      this.notifyBadge = false
+      var api = this.api
+      api += `?clearNotifications=1&username=${this.username}&password=${this.password}`
+      var res = await fetch(api)
+      res = await res.json()
+      console.log(res)
+
+
+
+    }
+  },
+  mounted(){
   }
 }
 </script>
