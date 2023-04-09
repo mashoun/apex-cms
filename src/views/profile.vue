@@ -155,6 +155,7 @@
 export default {
     data(){
         return{
+            
             newSlide:'',
             slideAlt:'',
             newLink:{
