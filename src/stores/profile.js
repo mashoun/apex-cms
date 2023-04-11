@@ -1,11 +1,19 @@
-import { ref, computed } from 'vue'
-import { defineStore } from 'pinia'
+import { defineStore } from "pinia";
 
-export const useProfile = defineStore('profile', () => {
-    state: () => {
-        return {
-            pic: 'https://drive.google.com/uc?export=view&id=1carhdDO1t8HQlqGYBC9ad57n2WQamfaa'
+export const useProfile = defineStore('profile',{
+    state:() => ({
+        username:'',
+        password:'',
+        github:'',
+        api:''
+    }),
+    actions:{
+        setProfile(username,password,github,api){
+            this.username = username
+            this.password = password
+            this.github = github
+            this.api = api
         }
+
     }
 })
-// https://drive.google.com/uc?export=view&id=1carhdDO1t8HQlqGYBC9ad57n2WQamfaa

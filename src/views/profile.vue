@@ -152,7 +152,15 @@
 </template>
 
 <script>
+
+import {useProfile} from '../stores/profile'
+// import '../assets/js/Utilities'
+import { file64, optimizeImageQuality, getCurrentDate } from '../assets/js/Utilities'
 export default {
+    setup(){
+        const store = useProfile()
+        return {store}
+    },
     data(){
         return{
             
@@ -180,53 +188,42 @@ export default {
     },
     methods:{
         
-        getCurrentDate() {
-        const currentDate = new Date();
-        const day = currentDate.getDate().toString().padStart(2, '0');
-        const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-        const year = currentDate.getFullYear().toString();
-        const hours = currentDate.getHours().toString().padStart(2, '0');
-        const minutes = currentDate.getMinutes().toString().padStart(2, '0');
-        const seconds = currentDate.getSeconds().toString().padStart(2, '0');
-
-        return `${year}${month}${day}${hours}${minutes}${seconds}`;
-        },
         async getProfile(){
             this.spinner = true
-            var api = this.api
+            var api = this.store.api
             api += `?getProfile=1`
 
             var res = await fetch(api)
             res = await res.json()
             
-            console.log(res)
+            // console.log(res)
             this.profile = res
             this.spinner = false
 
         },
         async setProfile(){
            try{
-            var profile = this.profile
-            delete profile.links
-            delete profile.slides
-            delete profile.blogs
+                var profile = this.profile
+                delete profile.links
+                delete profile.slides
+                delete profile.blogs
 
-            var api = this.api
-            api += `?setProfile=1&username=${this.username}&password=${this.password}`
-            this.spinner = true
-            var res = await fetch(api,{
-                method:'POST',
-                headers:{
-                    'Content-Type':'text/plain'
-                },
-                body:JSON.stringify(profile)
-            })
-            res = await res.json()
-            // console.log(res)
-            this.spinner = false
+                var api = this.store.api
+                api += `?setProfile=1&username=${this.store.username}&password=${this.store.password}`
+                this.spinner = true
+                var res = await fetch(api,{
+                    method:'POST',
+                    headers:{
+                        'Content-Type':'text/plain'
+                    },
+                    body:JSON.stringify(profile)
+                })
+                res = await res.json()
+                // console.log(res)
+                this.spinner = false
            }catch(err){
-            console.log(err)
-            this.spinner = false
+                console.log(err)
+                this.spinner = false
 
            }
 
@@ -234,12 +231,12 @@ export default {
         async addLink(){
             try{
                 this.spinner = true
-                var api = this.api
-                api += `?username=${this.username}&password=${this.password}&addLink=1&title=${this.newLink.title}&url=${this.newLink.url}`
+                var api = this.store.api
+                api += `?username=${this.store.username}&password=${this.store.password}&addLink=1&title=${this.newLink.title}&url=${this.newLink.url}`
                 var res = await fetch(api)
                 res = await res.json()
 
-                console.log(res)
+                // console.log(res)
                 this.spinner = false
             }catch(err){
                 console.log(new Error(err))
@@ -249,8 +246,8 @@ export default {
             try{
                 
                 this.spinner = true
-                var api = this.api
-                api += `?username=${this.username}&password=${this.password}&addSlide=1&folderId=1szJRlALMY075a2lRCmXUxCCRIZJWf5nu`
+                var api = this.store.api
+                api += `?username=${this.store.username}&password=${this.store.password}&addSlide=1&folderId=1szJRlALMY075a2lRCmXUxCCRIZJWf5nu`
                 var slides = []
                 slides.push(this.newSlide)
 
@@ -263,7 +260,7 @@ export default {
                 })
                 res = await res.json()
 
-                console.log(res)
+                // console.log(res)
                 this.spinner = false
             }catch(err){
                 console.log(err)
@@ -274,32 +271,40 @@ export default {
             
         }
     },
-    props:['api','username','password'],
     mounted(){
         this.getProfile()
         const profilePicBtn = document.getElementById('profilePic')
-        profilePicBtn.addEventListener('change',e=>{
-        
+        profilePicBtn.addEventListener('change',async e => {
+            
+
             const file = e.target.files[0]
-            var reader = new FileReader()
-            reader.readAsDataURL(file)
-            reader.onload = ()=>{
-                this.profile.pic = reader.result
-            }
+            this.profile.pic = await file64(file)
+            this.profile.pic = await optimizeImageQuality(this.profile.pic,0.7)
+            // var reader = new FileReader()
+            // reader.readAsDataURL(file)
+            // reader.onload = ()=>{
+            //     this.profile.pic = reader.result
+                
+            // }
         })
 
         const addSlideBtn = document.getElementById('addSlideBtn')
-        addSlideBtn.addEventListener('change',e=>{
+        addSlideBtn.addEventListener('change',async e => {
             const file = e.target.files[0]
-            console.log(file)
-            var reader = new FileReader()
-            reader.readAsDataURL(file)
-            reader.onload = ()=>{
-                this.newSlide = {
-                    alt:`${this.slideAlt}-${this.getCurrentDate()}`,
-                    src64:reader.result
-                }
+            const src64 = await file64(file)
+            this.newSlide = {
+                alt:`${this.slideAlt}-${getCurrentDate()}`,
+                src64:src64
             }
+            // console.log(file)
+            // var reader = new FileReader()
+            // reader.readAsDataURL(file)
+            // reader.onload = ()=>{
+            //     this.newSlide = {
+            //         alt:`${this.slideAlt}-${this.store.getCurrentDate()}`,
+            //         src64:reader.result
+            //     }
+            // }
 
         })
 

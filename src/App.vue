@@ -36,9 +36,9 @@
       <div class="d-flex gap-3 align-items-center">
         <div class="position-relative point" title="check notifications">    
           <img :src="pic" data-bs-toggle="modal" data-bs-target="#notifications" alt="logo" class="img-fluid rounded-circle" width="40" height="40">
-          <span v-show="notifyBadge" class="position-absolute top-0 start-100 translate-middle badge border border-light rounded-pill bg-danger font-monospace fs-xsmall m-0">{{notifications.length}}</span>
+          <span v-if="notifyBadge" class="position-absolute top-0 start-100 translate-middle badge border border-light rounded-pill bg-danger font-monospace fs-xsmall m-0">{{notifications.length}}</span>
         </div>
-        <h5 class="text-secondary fs-4 m-0">Mashoun CMS</h5>
+        <h5 class="text-secondary fs-4 m-0">Mashoun CMS </h5>
       </div>
       <i class="fs-4 bi bi-three-dots-vertical d-block d-lg-none" type="button" data-bs-toggle="dropdown"></i>
       <ul class="dropdown-menu">
@@ -58,7 +58,8 @@
     </nav>
   </header>
   <main v-if="isLogedIn" class="py-5 my-5">
-    <router-view :username="username" :password="password" :github="github" :api="api"></router-view>
+    <!-- <router-view :username="username" :password="password" :github="github" :api="api"></router-view> -->
+    <router-view></router-view>
   </main>
   
   <!-- Modals -->
@@ -69,8 +70,8 @@
           <h1 class="modal-title fs-6 text-primary pop" id="exampleModalLabel">You have {{notifications.length}} notifications</h1>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body d-flex flex-column gap-3">
-          <span v-show="!notifyBadge" class="text-center material-symbols-outlined text-secondary display-1">notification_important</span>
+        <div class="px-3 d-flex flex-column">
+          <span v-if="!notifyBadge" class="text-center material-symbols-outlined text-secondary display-1">notification_important</span>
           <span></span>
           <div v-for="n in notifications" :key="n" class="p-2">
             <span class="fs-xsmall pop">{{timo(n.date)}}</span>
@@ -91,12 +92,19 @@
 </template>
 
 <script>
+import { timo } from './assets/js/Utilities'
+import {useProfile} from './stores/profile'
 export default {
+  setup(){
+    const store = useProfile()
+    return {store}
+  },
   data(){
     return{
 
-      api:'https://script.google.com/macros/s/AKfycbybsItStta2Gm5wYVqPBX4lPRjPO3Da3Z6DLCHKBWB52DFhiFf08NT9virUyMPxC7zWlQ/exec',
-      pic : "https://drive.google.com/uc?export=view&id=1carhdDO1t8HQlqGYBC9ad57n2WQamfaa",
+      api:'https://script.google.com/macros/s/AKfycbwhJnLMf1roJKCdImxSeXnrKNDhrptSMBkgeXDmLz2SWvuYKcDEs6alwVezKWCJrkhM3g/exec',
+      // pic : "https://drive.google.com/uc?export=view&id=1carhdDO1t8HQlqGYBC9ad57n2WQamfaa",
+      pic:'https://drive.google.com/uc?id=1QcQg7qzryHaTBoOjgRt-A8URIZ4N1Qmf&export=view',
       username: '',
       password: '',
       isLogedIn: false,
@@ -113,29 +121,20 @@ export default {
       if(notif.icon == 'camera-reels') return 'text-info bi bi-camera-reels'
       return 'text-warning bi bi-chat-square'
     },
-    focus(id) {
-      document.getElementById(id).focus()
-    },
-
-    timo(date) {
-      dayjs.extend(window.dayjs_plugin_relativeTime);
-      dayjs();
-      const futureDate = dayjs(date);
-      console.log(futureDate.fromNow());
-      return futureDate.fromNow()
-    },
     login() {
       this.loginSpinner = true;
       var api = this.api
       api += `?username=${this.username}&password=${this.password}`
 
       fetch(api).then(res => res.json()).then(res => {
-        console.log(res)
+        // console.log(res)
         if (res != '500') {
           this.isLogedIn = true;
           this.loginSpinner = false;
           this.github = res
           this.getNotifications()
+          this.store.setProfile(this.username,this.password,this.github,this.api)
+
         } else {
 
           document.getElementById('username').classList.add('is-invalid')
@@ -156,16 +155,17 @@ export default {
       api += `?username=${this.username}&password=${this.password}&getNotifications=1`
       var res = await fetch(api)
       res = await res.json()
-      if(res != '500') {
+      // console.log(res)
+      if(res != '500' && res.length != 0) {
 
-        const music = new Audio('./src/assets/tone.wav')
+        const music = new Audio('./src/assets/media/tone.wav')
         this.notifications = res
         this.notifyBadge = true
         music.play()
 
       }
 
-      console.log(res)
+      // console.log(res)
     },
     async clearNotifications(){
       this.notifications = []
@@ -174,14 +174,11 @@ export default {
       api += `?clearNotifications=1&username=${this.username}&password=${this.password}`
       var res = await fetch(api)
       res = await res.json()
-      console.log(res)
+      // console.log(res)
 
 
 
     }
-  },
-  mounted(){
-
   }
 }
 </script>
